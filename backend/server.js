@@ -17,9 +17,9 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:5173',
   'http://localhost',
+  'https://carrer-portal.netlify.app',
   process.env.FRONTEND_URL,
   process.env.NETLIFY_URL,
-  'https://carrer-portal.netlify.app',
 ].filter(Boolean);
 
 const corsOptions = {
