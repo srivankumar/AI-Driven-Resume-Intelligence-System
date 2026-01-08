@@ -49,35 +49,35 @@ export default function CreateJob() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-3xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
         <button
           onClick={() => navigate('/admin')}
-          className="flex items-center space-x-2 text-slate-600 hover:text-slate-900 mb-6"
+          className="flex items-center space-x-2 text-slate-600 hover:text-slate-900 mb-4 sm:mb-6 text-sm sm:text-base"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Dashboard</span>
         </button>
 
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
-          <div className="flex items-center space-x-3 mb-8">
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 sm:p-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-3 mb-6 sm:mb-8">
             <div className="bg-slate-900 p-3 rounded-lg">
               <Plus className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Create New Job</h1>
-              <p className="text-slate-600">Post a new job opening to the portal</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Create New Job</h1>
+              <p className="text-xs sm:text-sm text-slate-600">Post a new job opening to the portal</p>
             </div>
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg mb-6 text-sm">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-2">
                 Job Title
               </label>
               <input
@@ -86,13 +86,13 @@ export default function CreateJob() {
                 value={formData.title}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent transition"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent transition text-sm sm:text-base"
                 placeholder="e.g. Senior Software Engineer"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-2">
                 Job Description
               </label>
               <textarea

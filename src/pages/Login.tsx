@@ -71,28 +71,28 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-8">
-        <div className="flex items-center justify-center mb-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6 sm:p-8">
+        <div className="flex items-center justify-center mb-6 sm:mb-8">
           <div className="bg-slate-900 p-3 rounded-lg">
             <LogIn className="w-6 h-6 text-white" />
           </div>
         </div>
 
-        <h2 className="text-3xl font-bold text-center text-slate-900 mb-2">Welcome Back</h2>
-        <p className="text-center text-slate-600 mb-8">Sign in to your account</p>
+        <h2 className="text-2xl sm:text-3xl font-bold text-center text-slate-900 mb-2">Welcome Back</h2>
+        <p className="text-center text-sm sm:text-base text-slate-600 mb-6 sm:mb-8">Sign in to your account</p>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-start gap-3">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg mb-4 flex items-start gap-3 text-sm">
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-xs sm:text-sm font-medium text-slate-700">
                 Email Address
               </label>
               {email && !emailError && (
@@ -104,7 +104,7 @@ export default function Login() {
               value={email}
               onChange={handleEmailChange}
               required
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition ${
+              className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:ring-2 focus:border-transparent transition text-sm sm:text-base ${
                 emailError
                   ? 'border-red-300 focus:ring-red-500 bg-red-50'
                   : email && !emailError
@@ -114,7 +114,7 @@ export default function Login() {
               placeholder="you@example.com"
             />
             {emailError && (
-              <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+              <p className="mt-2 text-xs sm:text-sm text-red-600 flex items-center gap-1">
                 <AlertCircle className="w-4 h-4" />
                 {emailError}
               </p>
@@ -123,7 +123,7 @@ export default function Login() {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-xs sm:text-sm font-medium text-slate-700">
                 Password
               </label>
               {password && !passwordError && (
@@ -135,7 +135,7 @@ export default function Login() {
               value={password}
               onChange={handlePasswordChange}
               required
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition ${
+              className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:ring-2 focus:border-transparent transition text-sm sm:text-base ${
                 passwordError
                   ? 'border-red-300 focus:ring-red-500 bg-red-50'
                   : password && !passwordError
@@ -145,7 +145,7 @@ export default function Login() {
               placeholder="••••••••"
             />
             {passwordError && (
-              <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+              <p className="mt-2 text-xs sm:text-sm text-red-600 flex items-center gap-1">
                 <AlertCircle className="w-4 h-4" />
                 {passwordError}
               </p>
@@ -155,13 +155,13 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading || emailError !== '' || passwordError !== ''}
-            className="w-full bg-slate-900 text-white py-3 rounded-lg font-medium hover:bg-slate-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-slate-900 text-white py-2 sm:py-3 rounded-lg font-medium hover:bg-slate-800 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-        <p className="text-center text-slate-600 mt-6">
+        <p className="text-center text-xs sm:text-sm text-slate-600 mt-4 sm:mt-6">
           Don't have an account?{' '}
           <Link to="/register" className="text-slate-900 font-medium hover:underline">
             Sign up
