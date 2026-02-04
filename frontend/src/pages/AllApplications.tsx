@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { applicationApi, jobApi } from '../services/api';
+import { useAllJobs } from '../hooks/useJobs';
+import { useAllApplications, useResumeDownloadUrl } from '../hooks/useApplications';
 import { ArrowLeft, Filter, Award, Download, Mail, User } from 'lucide-react';
 
 interface Application {
@@ -29,56 +30,20 @@ interface Job {
 }
 
 export default function AllApplications() {
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     jobId: '',
     status: '',
     minScore: '',
   });
+  const [appliedFilters, setAppliedFilters] = useState<any>({});
   const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchJobs();
-    fetchApplications();
-  }, []);
-
-  const fetchJobs = async () => {
-    try {
-      const response = await jobApi.getAllJobs();
-      if (response?.jobs) {
-        setJobs(response.jobs);
-      }
-    } catch (err) {
-      console.error('Failed to fetch jobs:', err);
-    }
-  };
-
-  const fetchApplications = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const filterParams: any = {};
-      if (filters.jobId) filterParams.jobId = filters.jobId;
-      if (filters.status) filterParams.status = filters.status;
-      if (filters.minScore) filterParams.minScore = parseInt(filters.minScore);
-
-      const response = await applicationApi.getAllApplications(filterParams);
-      if (response?.applications) {
-        setApplications(response.applications);
-      } else {
-        setApplications([]);
-      }
-    } catch (err) {
-      console.error('Failed to fetch applications:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load applications');
-      setApplications([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  
+  // Use cached queries
+  const { data: jobs = [] } = useAllJobs();
+  const { data: applications = [], isLoading: loading, error: fetchError } = useAllApplications(appliedFilters);
+  const downloadMutation = useResumeDownloadUrl();
+  
+  const error = fetchError ? (fetchError as Error).message : null;
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
     setFilters({
@@ -88,15 +53,31 @@ export default function AllApplications() {
   };
 
   const handleApplyFilters = () => {
-    fetchApplications();
+    const filterParams: any = {};
+    if (filters.jobId) filterParams.jobId = filters.jobId;
+    if (filters.status) filterParams.status = filters.status;
+    if (filters.minScore) filterParams.minScore = parseInt(filters.minScore);
+    setAppliedFilters(filterParams);
   };
 
   const handleClearFilters = () => {
     setFilters({ jobId: '', status: '', minScore: '' });
-    setTimeout(fetchApplications, 100);
+    setAppliedFilters({});
   };
 
   const handleDownload = async (resumeKey: string) => {
+    try {
+      const response = await downloadMutation.mutateAsync(resumeKey);
+      if (response?.url) {
+        window.open(response.url, '_blank', 'noopener');
+      }
+    } catch (err) {
+      console.error('Failed to download resume:', err);
+      alert('Failed to download resume');
+    }
+  };
+  
+  const handleDownloadOld = async (resumeKey: string) => {
     try {
       const { url } = await applicationApi.getResumeDownloadUrl(resumeKey);
       window.open(url, '_blank', 'noopener');

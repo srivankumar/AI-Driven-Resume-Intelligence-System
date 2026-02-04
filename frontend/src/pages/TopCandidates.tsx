@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { applicationApi } from '../services/api';
+import { useTopCandidates, useResumeDownloadUrl } from '../hooks/useApplications';
 import { ArrowLeft, Award, Trophy, Download, Mail, User } from 'lucide-react';
 
 interface Candidate {
@@ -24,34 +24,14 @@ interface Candidate {
 }
 
 export default function TopCandidates() {
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [limit, setLimit] = useState(10);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchTopCandidates();
-  }, [limit]);
-
-  const fetchTopCandidates = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await applicationApi.getTopCandidates(limit);
-      if (response?.candidates) {
-        setCandidates(response.candidates);
-      } else {
-        setCandidates([]);
-      }
-    } catch (err) {
-      console.error('Failed to fetch top candidates:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load candidates');
-      setCandidates([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  
+  // Use cached query with dynamic limit
+  const { data: candidates = [], isLoading: loading, error: fetchError } = useTopCandidates(limit);
+  const downloadMutation = useResumeDownloadUrl();
+  
+  const error = fetchError ? (fetchError as Error).message : null;
 
   const getRankIcon = (index: number) => {
     if (index === 0) return <Trophy className="w-6 h-6 text-yellow-500" />;
@@ -73,7 +53,7 @@ export default function TopCandidates() {
 
   const handleDownload = async (resumeKey: string) => {
     try {
-      const { url } = await applicationApi.getResumeDownloadUrl(resumeKey);
+      const { url } = await downloadMutation.mutateAsync(resumeKey);
       window.open(url, '_blank', 'noopener');
     } catch (err) {
       console.error('Resume download error:', err);

@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { applicationApi } from "../services/api";
+import { useMyApplications, useResumeDownloadUrl } from "../hooks/useApplications";
 import {
   ArrowLeft,
   FileText,
@@ -34,37 +34,16 @@ interface Application {
 }
 
 export default function MyApplications() {
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [downloadingKey, setDownloadingKey] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchApplications();
-  }, []);
-
-  const fetchApplications = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await applicationApi.getMyApplications();
-      if (response?.applications && Array.isArray(response.applications)) {
-        setApplications(response.applications);
-      } else {
-        setApplications([]);
-      }
-    } catch (err) {
-      console.error("Fetch applications error:", err);
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to load applications. Please try again.";
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
+  
+  // Use cached query
+  const { data: applications = [], isLoading: loading, error: fetchError } = useMyApplications();
+  const downloadMutation = useResumeDownloadUrl();
+  
+  const error = fetchError ? (fetchError as Error).message : null;
 
   const handleDownload = async (resumeKey: string, jobTitle: string) => {
     try {
@@ -77,11 +56,10 @@ export default function MyApplications() {
         return;
       }
 
-      const response = await applicationApi.getResumeDownloadUrl(resumeKey);
+      const response = await downloadMutation.mutateAsync(resumeKey);
 
       if (response?.url) {
         window.open(response.url, "_blank", "noopener");
-        // Add small delay before clearing loading state
         setTimeout(() => {
           setDownloadingKey(null);
         }, 1000);

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { jobApi } from '../services/api';
+import { useActiveJobs } from '../hooks/useJobs';
 import { Briefcase, Calendar, Clock, LogOut, FileText, Search } from 'lucide-react';
 
 interface Job {
@@ -15,24 +15,12 @@ interface Job {
 }
 
 export default function UserDashboard() {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchJobs();
-  }, []);
-
-  const fetchJobs = async () => {
-    setLoading(true);
-    const response = await jobApi.getActiveJobs();
-    if (response.jobs) {
-      setJobs(response.jobs);
-    }
-    setLoading(false);
-  };
+  
+  // Use cached query - automatic refetching and caching
+  const { data: jobs = [], isLoading: loading } = useActiveJobs();
 
   const handleLogout = () => {
     logout();

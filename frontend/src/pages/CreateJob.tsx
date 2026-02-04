@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { jobApi } from '../services/api';
+import { useCreateJob } from '../hooks/useJobs';
 import { ArrowLeft, Plus } from 'lucide-react';
 
 export default function CreateJob() {
@@ -12,8 +12,10 @@ export default function CreateJob() {
     application_deadline: '',
   });
   const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+  
+  // Use mutation hook
+  const createJobMutation = useCreateJob();
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -33,18 +35,13 @@ export default function CreateJob() {
       return;
     }
 
-    setSubmitting(true);
-
-    const response = await jobApi.createJob(formData);
-
-    if (response.error) {
-      setError(response.error);
-      setSubmitting(false);
-      return;
+    try {
+      await createJobMutation.mutateAsync(formData);
+      alert('Job created successfully!');
+      navigate('/admin');
+    } catch (err: any) {
+      setError(err.message || 'Failed to create job');
     }
-
-    alert('Job created successfully!');
-    navigate('/admin');
   };
 
   return (
@@ -165,10 +162,10 @@ export default function CreateJob() {
             <div className="flex space-x-4">
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={createJobMutation.isPending}
                 className="flex-1 bg-slate-900 text-white py-3 rounded-lg font-medium hover:bg-slate-800 transition disabled:opacity-50"
               >
-                {submitting ? 'Creating Job...' : 'Create Job'}
+                {createJobMutation.isPending ? 'Creating Job...' : 'Create Job'}
               </button>
               <button
                 type="button"

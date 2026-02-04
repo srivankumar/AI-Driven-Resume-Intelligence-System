@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { jobApi, applicationApi } from '../services/api';
+import { useAllJobs, useDeleteJob, useEndJobApplication } from '../hooks/useJobs';
+import { useAllApplications } from '../hooks/useApplications';
 import {
   Briefcase,
   Calendar,
@@ -34,53 +35,29 @@ interface Stats {
 }
 
 export default function AdminDashboard() {
-  const [jobs, setJobs] = useState<Job[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [stats, setStats] = useState<Stats>({
-    totalJobs: 0,
-    activeJobs: 0,
-    totalApplications: 0,
-    shortlisted: 0,
-  });
-  const [loading, setLoading] = useState(true);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-
-    const [jobsResponse, applicationsResponse] = await Promise.all([
-      jobApi.getAllJobs(),
-      applicationApi.getAllApplications(),
-    ]);
-
-    if (jobsResponse.jobs) {
-      setJobs(jobsResponse.jobs);
-      setStats((prev) => ({
-        ...prev,
-        totalJobs: jobsResponse.jobs.length,
-        activeJobs: jobsResponse.jobs.filter(
-          (j: Job) => j.is_active && new Date(j.application_deadline) >= new Date()
-        ).length,
-      }));
-    }
-
-    if (applicationsResponse.applications) {
-      setStats((prev) => ({
-        ...prev,
-        totalApplications: applicationsResponse.applications.length,
-        shortlisted: applicationsResponse.applications.filter(
-          (a: any) => a.status === 'shortlisted'
-        ).length,
-      }));
-    }
-
-    setLoading(false);
-  };
+  
+  // Use cached queries - automatic refetching and caching
+  const { data: jobs = [], isLoading: jobsLoading } = useAllJobs();
+  const { data: applications = [], isLoading: appsLoading } = useAllApplications();
+  const deleteJobMutation = useDeleteJob();
+  const endJobMutation = useEndJobApplication();
+  
+  const loading = jobsLoading || appsLoading;
+  
+  // Calculate stats from cached data
+  const stats = useMemo<Stats>(() => {
+    return {
+      totalJobs: jobs.length,
+      activeJobs: jobs.filter(
+        (j: Job) => j.is_active && new Date(j.application_deadline) >= new Date()
+      ).length,
+      totalApplications: applications.length,
+      shortlisted: applications.filter((a: any) => a.status === 'shortlisted').length,
+    };
+  }, [jobs, applications]);
 
   const handleLogout = () => {
     logout();
@@ -96,15 +73,16 @@ export default function AdminDashboard() {
       return;
     }
 
-    const response = await jobApi.endApplication(jobId);
-
-    if (response.message) {
-      alert(
-        `Application ended successfully!\nShortlisted: ${response.shortlisted}\nRejected: ${response.rejected}\nEmails have been sent to all candidates.`
-      );
-      fetchData();
-    } else {
-      alert('Failed to end application');
+    try {
+      const response = await endJobMutation.mutateAsync(jobId);
+      
+      if (response.message) {
+        alert(
+          `Application ended successfully!\nShortlisted: ${response.shortlisted}\nRejected: ${response.rejected}\nEmails have been sent to all candidates.`
+        );
+      }
+    } catch (error: any) {
+      alert(error.message || 'Failed to end application');
     }
   };
 
@@ -113,13 +91,11 @@ export default function AdminDashboard() {
       return;
     }
 
-    const response = await jobApi.deleteJob(jobId);
-
-    if (response.message) {
+    try {
+      await deleteJobMutation.mutateAsync(jobId);
       alert('Job deleted successfully');
-      fetchData();
-    } else {
-      alert('Failed to delete job');
+    } catch (error: any) {
+      alert(error.message || 'Failed to delete job');
     }
   };
 

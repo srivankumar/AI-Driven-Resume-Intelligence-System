@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { jobApi, applicationApi } from '../services/api';
+import { useJob } from '../hooks/useJobs';
+import { useApplicationStatus, useApplyJob } from '../hooks/useApplications';
 import { ArrowLeft, Upload, FileText, CheckCircle, AlertCircle, Clock, Checkmark } from 'lucide-react';
 import { validateResumeFile, formatFileSize, formatDate, getDeadlineStatus, validateJobDeadline } from '../utils/validation';
 
@@ -14,61 +15,30 @@ interface Job {
   application_deadline: string;
 }
 
-interface ApplicationStatus {
-  hasApplied: boolean;
-  applicationDate?: string;
-}
-
 export default function ApplyJob() {
   const { jobId } = useParams<{ jobId: string }>();
-  const [job, setJob] = useState<Job | null>(null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [fileError, setFileError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [applicationStatus, setApplicationStatus] = useState<ApplicationStatus>({ hasApplied: false });
   const [deadlineWarning, setDeadlineWarning] = useState('');
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // Use cached queries
+  const { data: job, isLoading: loading } = useJob(jobId);
+  const { data: applicationStatus } = useApplicationStatus(jobId);
+  const applyMutation = useApplyJob();
 
   useEffect(() => {
-    if (jobId) {
-      fetchJob();
-      checkApplicationStatus();
-    }
-  }, [jobId]);
-
-  // Check if user has already applied for this job
-  const checkApplicationStatus = async () => {
-    try {
-      const response = await applicationApi.checkApplicationStatus(jobId!);
-      if (response.applied) {
-        setApplicationStatus({
-          hasApplied: true,
-          applicationDate: response.applicationDate,
-        });
-      }
-    } catch (err) {
-      console.error('Error checking application status:', err);
-    }
-  };
-
-  const fetchJob = async () => {
-    setLoading(true);
-    const response = await jobApi.getJobById(jobId!);
-    if (response.job) {
-      setJob(response.job);
-      
+    if (job) {
       // Check deadline
-      const deadlineValidation = validateJobDeadline(response.job.application_deadline);
+      const deadlineValidation = validateJobDeadline(job.application_deadline);
       if (deadlineValidation.warning) {
         setDeadlineWarning(deadlineValidation.warning);
       }
     }
-    setLoading(false);
-  };
+  }, [job]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -90,7 +60,7 @@ export default function ApplyJob() {
     setError('');
 
     // Check if already applied
-    if (applicationStatus.hasApplied) {
+    if (applicationStatus?.applied) {
       setError('You have already applied for this job');
       return;
     }
@@ -107,20 +77,15 @@ export default function ApplyJob() {
       return;
     }
 
-    setSubmitting(true);
-
-    const response = await applicationApi.apply(jobId!, resumeFile);
-
-    if (response.error) {
-      setError(response.error);
-      setSubmitting(false);
-      return;
+    try {
+      await applyMutation.mutateAsync({ jobId: jobId!, resumeFile });
+      setSuccess(true);
+      setTimeout(() => {
+        navigate('/my-applications');
+      }, 2500);
+    } catch (err: any) {
+      setError(err.message || 'Failed to submit application');
     }
-
-    setSuccess(true);
-    setTimeout(() => {
-      navigate('/my-applications');
-    }, 2500);
   };
 
   if (loading) {
